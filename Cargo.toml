@@ -1,0 +1,80 @@
+# =============================================================================
+# putty-rs — clone de PuTTY 0.83 en Rust pur
+# Binaire : putty-rs.exe
+#
+# Choix de conception (voir README.md et ANALYSIS_NOTES.md) :
+#   - GUI 100 % pure Rust : eframe/egui (wgpu, pas de C++).
+#   - Émulation VT100/xterm : crate `vt100` (parseur vte pur Rust + modèle
+#     d'écran), enrichie d'une surcouche « façon PuTTY ».
+#   - Backends réseau : threads OS + std::sync::mpsc (pas de tokio), sauf SSH
+#     (russh impose tokio ; il reste confiné derrière le feature `ssh`).
+#   - Configuration : registre HKCU\Software\SimonTatham\PuTTY\Sessions comme
+#     PuTTY  (chemin OBSERVÉ dans putty.exe 0.83, cf. ANALYSIS_NOTES.md).
+#
+# Versions pingées sur des releases STABLES réelles de crates.io (vérifiées
+# le 2026-10-27) : eframe/egui 0.31.x, vt100 0.18.x, russh 0.45.x (0.46 en
+# beta uniquement), winreg 0.52.x, socket2 0.5.x, env_logger 0.11.x.
+# =============================================================================
+
+[package]
+name = "putty-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Clone de PuTTY 0.83 en Rust pur : émulateur de terminal graphique avec backends SSH/Telnet/Raw/Serial"
+license = "MIT"
+repository = "https://example.invalid/putty-rs"
+
+[[bin]]
+name = "putty-rs"
+path = "src/main.rs"
+
+[features]
+default = ["ssh"]
+# SSH est derrière un feature-gate ; `--no-default-features` compile sans
+# russh/tokio (utile pour un binaire plus léger ou si russh casse l'API).
+ssh = ["dep:russh", "dep:async-trait"]
+
+[dependencies]
+# --- GUI -------------------------------------------------------------------
+eframe = "0.31"          # fenêtre + boucle eframe (rendu wgpu, pur Rust)
+egui = "0.31"            # widgets + peinture de la grille terminal
+# Lecteur presse-papiers direct (clic droit / Shift+Insert façon PuTTY) :
+# pur Rust sur Windows (windows-sys), pas de C++.
+arboard = "3.4"
+
+# --- Terminal --------------------------------------------------------------
+vt100 = "0.18"           # parseur de flux terminal + modèle d'écran (vte pur Rust)
+
+# --- Système / registre / réseau -------------------------------------------
+winreg = "0.52"          # HKCU\Software\SimonTatham\PuTTY\Sessions (comme PuTTY)
+socket2 = "0.5"          # sockets TCP explicites (family, nodelay) pour raw/telnet
+
+# --- Divers ----------------------------------------------------------------
+log = "0.4"
+env_logger = "0.11"      # logs activables via RUST_LOG / PUTTY_RS_LOG
+
+# --- Serveur MCP embarqué (docs/MCP_PILOT.md) --------------------------------
+# rmcp 3.8.0 = max_stable vérifiée (crates.io 27/10/2026).
+rmcp = { version = "3.8.0", default-features = false, features = [
+    "server",
+    "macros",
+    "transport-streamable-http-server",
+    "transport-io",
+] }
+axum = { version = "0.8", features = ["macros"] }
+uuid = { version = "1", features = ["v4"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# --- SSH (feature `ssh`, activée par défaut) -------------------------------
+# russh exige un runtime tokio ; tokio est désormais NON optionnel (le thread
+# MCP tourne même sans la feature ssh).
+russh = { version = "0.45", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "time", "sync", "macros", "io-std"] }
+async-trait = { version = "0.1", optional = true }
+tower = "0.5.3"
+axum-core = "0.5.6"
+
+[profile.release]
+lto = "thin"
