@@ -1,0 +1,15 @@
+PuTTY-User-Key-File-3: ssh-ed25519
+Encryption: none
+Comment: ed25519-key-20220402
+Public-Lines: 2
+AAAAC3NzaC1lZDI1NTE5AAAAILzuIFwZ8ZhgOlilcSb+9zPuCf/DmKJiloVlmWGy
+xa/F
+Private-Lines: 1
+AAAAIPca6vLwtB2NJhZUpABQISR0gcQH8jjQLta19VyzA3wc
+Private-MAC: 1159e9628259b35933b397379bbe8a14a1f1d97fe91e446e45a9581a3408b70e
+
+; Source: shipped string inside C:\Program Files\PuTTY\puttygen.exe Release 0.83 x64
+; at virtual address 0x140084037 (extracted via REA/Ghidra read_bytes, 2026-10-27).
+; SHA-256 of puttygen.exe identity confirmed by REA session ev (same profile as putty.exe analysis).
+; Golden vector for the putty-rs PPK v3 parser test: algorithm ssh-ed25519, Encryption: none,
+; Argon2 key derivation defaults (PPK v3), Private-MAC computed over the file.
